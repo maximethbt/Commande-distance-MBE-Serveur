@@ -9,6 +9,7 @@ namespace Commande_distance_MBE_Serveur
     {
         static void Main(string[] args)
         {
+            MBEServer Server = new MBEServer(9000);
         }
     }
 }
