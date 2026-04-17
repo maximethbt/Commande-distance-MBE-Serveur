@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Capture_ecran_MBE
+namespace Commande_distance_MBE_Serveur
 {
     static class CaptureMBE
     {

@@ -4,6 +4,9 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
+using System.IO;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace Commande_distance_MBE_Serveur
 {
@@ -22,6 +25,18 @@ namespace Commande_distance_MBE_Serveur
             client = listener.AcceptTcpClient();
             stream = client.GetStream();
             Console.WriteLine("Connected client");
+        }
+
+        public int ReadRequest()
+        {
+            try
+            {
+                return stream.ReadByte();  // Retourne -1 si déconnecté
+            }
+            catch
+            {
+                return -1;
+            }
         }
 
         public string ReadMessage()
@@ -46,6 +61,29 @@ namespace Commande_distance_MBE_Serveur
             stream.Write(data, 0, data.Length);
         }
 
+        public bool SendImage(byte[] imageBytes)
+        {
+            try
+            {
+                byte[] taille = BitConverter.GetBytes(imageBytes.Length);
+                stream.Write(taille, 0, 4);
+                stream.Write(imageBytes, 0, imageBytes.Length);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public bool SendImage(Bitmap image)
+        {
+            MemoryStream ms = new MemoryStream();
+            image.Save(ms, ImageFormat.Jpeg);
+            byte[] imageBytes = ms.ToArray();
+            ms.Dispose();
+            return SendImage(imageBytes);
+        }
         public void Stop()
         {
             if (stream != null) stream.Close();
