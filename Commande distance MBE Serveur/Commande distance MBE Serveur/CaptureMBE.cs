@@ -17,12 +17,19 @@ namespace Commande_distance_MBE_Serveur
 
         public static Bitmap Capture(int ScreenNum)
         {
-            bounds = Screen.AllScreens[ScreenNum-1].Bounds;
-            screenshot = new Bitmap(bounds.Width, bounds.Height);
-            g = Graphics.FromImage(screenshot);
-            g.CopyFromScreen(bounds.X, bounds.Y, 0, 0, bounds.Size);
-            return new Bitmap(screenshot);
-            g.Dispose();
+            Rectangle bounds = Screen.AllScreens[ScreenNum - 1].Bounds;
+
+            // Capture seulement les 1024x768 du coin haut-gauche
+            int w = Math.Min(1024, bounds.Width);
+            int h = Math.Min(768, bounds.Height);
+
+            Bitmap screenshot = new Bitmap(w, h);
+            using (Graphics g = Graphics.FromImage(screenshot))
+            {
+                g.CopyFromScreen(bounds.X, bounds.Y, 0, 0, new Size(w, h));
+            }
+            return screenshot;
+
         }
         
 

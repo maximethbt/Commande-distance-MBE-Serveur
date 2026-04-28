@@ -7,6 +7,7 @@ using System.Text;
 using System.IO;
 using System.Drawing;
 using System.Drawing.Imaging;
+using Encoder = System.Drawing.Imaging.Encoder;
 
 namespace Commande_distance_MBE_Serveur
 {
@@ -79,7 +80,17 @@ namespace Commande_distance_MBE_Serveur
         public bool SendImage(Bitmap image)
         {
             MemoryStream ms = new MemoryStream();
-            image.Save(ms, ImageFormat.Jpeg);
+
+            // Trouve le codec JPEG
+            ImageCodecInfo jpegCodec = null;
+            foreach (ImageCodecInfo c in ImageCodecInfo.GetImageEncoders())
+                if (c.MimeType == "image/jpeg") { jpegCodec = c; break; }
+
+            // Qualité 50%
+            EncoderParameters parameters = new EncoderParameters(1);
+            parameters.Param[0] = new EncoderParameter(Encoder.Quality, 50L);
+
+            image.Save(ms, jpegCodec, parameters);
             byte[] imageBytes = ms.ToArray();
             ms.Dispose();
             return SendImage(imageBytes);

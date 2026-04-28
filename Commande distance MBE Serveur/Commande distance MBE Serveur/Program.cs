@@ -24,6 +24,7 @@ namespace Commande_distance_MBE_Serveur
                     case 0x01:  // Screenshot
                         image = CaptureMBE.Capture(1);
                         Server.SendImage(image);
+                        image.Dispose();
                         break;
                 }
             }
