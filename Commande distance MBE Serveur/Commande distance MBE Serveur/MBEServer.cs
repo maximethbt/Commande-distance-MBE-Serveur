@@ -8,6 +8,7 @@ using System.IO;
 using System.Drawing;
 using System.Drawing.Imaging;
 using Encoder = System.Drawing.Imaging.Encoder;
+using System.Diagnostics;
 
 namespace Commande_distance_MBE_Serveur
 {
@@ -17,6 +18,23 @@ namespace Commande_distance_MBE_Serveur
         private TcpListener listener;
         private TcpClient client;
         private NetworkStream stream;
+        private static readonly ImageCodecInfo JpegCodec = GetJpegCodec();
+        private static readonly EncoderParameters JpegParams = CreateJpegParams(50L);
+
+
+        private static ImageCodecInfo GetJpegCodec()
+        {
+            foreach (ImageCodecInfo c in ImageCodecInfo.GetImageEncoders())
+                if (c.MimeType == "image/jpeg") return c;
+            throw new Exception("JPEG codec not found");
+        }
+
+        private static EncoderParameters CreateJpegParams(long quality)
+        {
+            EncoderParameters p = new EncoderParameters(1);
+            p.Param[0] = new EncoderParameter(Encoder.Quality, quality);
+            return p;
+        }
         public MBEServer(int Port)
         {
             listener = new TcpListener(IPAddress.Any, Port);
@@ -79,22 +97,15 @@ namespace Commande_distance_MBE_Serveur
 
         public bool SendImage(Bitmap image)
         {
-            MemoryStream ms = new MemoryStream();
-
-            // Trouve le codec JPEG
-            ImageCodecInfo jpegCodec = null;
-            foreach (ImageCodecInfo c in ImageCodecInfo.GetImageEncoders())
-                if (c.MimeType == "image/jpeg") { jpegCodec = c; break; }
-
-            // Qualité 50%
-            EncoderParameters parameters = new EncoderParameters(1);
-            parameters.Param[0] = new EncoderParameter(Encoder.Quality, 50L);
-
-            image.Save(ms, jpegCodec, parameters);
-            byte[] imageBytes = ms.ToArray();
-            ms.Dispose();
-            return SendImage(imageBytes);
+            using (Bitmap small = new Bitmap(image, image.Width / 2, image.Height / 2))
+            using (MemoryStream ms = new MemoryStream())
+            {
+                small.Save(ms, JpegCodec, JpegParams);
+                byte[] imageBytes = ms.ToArray();
+                return SendImage(imageBytes);
+            }
         }
+
         public void Stop()
         {
             if (stream != null) stream.Close();

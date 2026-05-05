@@ -14,8 +14,11 @@ namespace Commande_distance_MBE_Serveur
             MBEServer Server = new MBEServer(9000);
             string Message;
             Bitmap image;
+            int i = 0;
             while(true)
             {
+                Console.WriteLine(i);
+                i++;
                 int requete = Server.ReadRequest();
                 if (requete == -1) break;
 
