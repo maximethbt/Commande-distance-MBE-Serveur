@@ -97,10 +97,9 @@ namespace Commande_distance_MBE_Serveur
 
         public bool SendImage(Bitmap image)
         {
-            using (Bitmap small = new Bitmap(image, image.Width / 2, image.Height / 2))
             using (MemoryStream ms = new MemoryStream())
             {
-                small.Save(ms, JpegCodec, JpegParams);
+                image.Save(ms, JpegCodec, JpegParams);
                 byte[] imageBytes = ms.ToArray();
                 return SendImage(imageBytes);
             }

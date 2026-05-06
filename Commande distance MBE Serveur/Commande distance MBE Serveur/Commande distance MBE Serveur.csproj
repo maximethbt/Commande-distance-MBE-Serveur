@@ -50,5 +50,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MBEServer.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="turbojpeg.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

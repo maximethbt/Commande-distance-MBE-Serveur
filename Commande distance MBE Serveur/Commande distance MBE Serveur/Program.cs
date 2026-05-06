@@ -15,9 +15,10 @@ namespace Commande_distance_MBE_Serveur
             string Message;
             Bitmap image;
             int i = 0;
-            while(true)
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            while (true)
             {
-                Console.WriteLine(i);
+                sw.Reset();
                 i++;
                 int requete = Server.ReadRequest();
                 if (requete == -1) break;
@@ -25,10 +26,19 @@ namespace Commande_distance_MBE_Serveur
                 switch (requete)
                 {
                     case 0x01:  // Screenshot
+                        sw.Start();
                         image = CaptureMBE.Capture(1);
+                        sw.Stop();
+                        long cap = sw.ElapsedMilliseconds;
+                        sw.Reset();
+                        sw.Start();
                         Server.SendImage(image);
+                        sw.Stop();
+                        long env = sw.ElapsedMilliseconds;
                         image.Dispose();
+                        Console.WriteLine(i + "capture = " + cap + " envoi = " + env);
                         break;
+                        
                 }
             }
 
