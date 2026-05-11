@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Forms;
 
 namespace Commande_distance_MBE_Serveur
 {
@@ -28,30 +29,26 @@ namespace Commande_distance_MBE_Serveur
 
             while (true)
             {
-                Console.WriteLine("Waiting ffor connection");
+                Console.WriteLine("Waiting for connection");
                 Server.WaitForClient();
                 Console.WriteLine("Connected Client");
                 while (true)
                 {
-                    sw.Reset();
-                    i++;
                     int requete = Server.ReadRequest();
                     if (requete == -1) break;
 
-                    switch (requete)
+                    switch (requete)    
                     {
                         case 0x01:  // Screenshot
-                            sw.Start();
                             image = CaptureMBE.Capture(1);
-                            sw.Stop();
-                            long cap = sw.ElapsedMilliseconds;
-                            sw.Reset();
-                            sw.Start();
                             Server.SendImage(image);
-                            sw.Stop();
-                            long env = sw.ElapsedMilliseconds;
                             image.Dispose();
-                            Console.WriteLine(i + "capture = " + cap + " envoi = " + env);
+                            break;
+
+                        case 0x02:
+                            int x = Server.ReadInt32();
+                            int y = Server.ReadInt32();
+                            Cursor.Position = new Point(x, y);
                             break;
 
                     }

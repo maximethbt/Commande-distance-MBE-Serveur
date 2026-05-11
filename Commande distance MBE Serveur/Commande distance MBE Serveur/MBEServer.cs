@@ -105,6 +105,24 @@ namespace Commande_distance_MBE_Serveur
             
         }
 
+        private byte[] ReadExact(int n)
+        {
+            byte[] buf = new byte[n];
+            int total = 0;
+            while (total < n)
+            {
+                int r = stream.Read(buf, total, n - total);
+                if (r <= 0) throw new Exception("Disconnected");
+                total += r;
+            }
+            return buf;
+        }
+
+        public int ReadInt32()
+        {
+            return BitConverter.ToInt32(ReadExact(4), 0);
+        }
+
         public void Stop()
         {
             if (stream != null) stream.Close();
