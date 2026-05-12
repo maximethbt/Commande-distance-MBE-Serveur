@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Commande_distance_MBE_Serveur
@@ -12,6 +13,8 @@ namespace Commande_distance_MBE_Serveur
     {
         static void Main(string[] args)
         {
+
+
             MBEServer Server = new MBEServer(9000);
             string Message;
             Bitmap image;
@@ -40,14 +43,17 @@ namespace Commande_distance_MBE_Serveur
                     switch (requete)    
                     {
                         case 0x01:  // Screenshot
-                            image = CaptureMBE.Capture(1);
-                            Server.SendImage(image);
-                            image.Dispose();
-                            break;
+                            ThreadPool.QueueUserWorkItem(_ => {
+                                var img = CaptureMBE.Capture(1);
+                                Server.SendImage(img);
+                                img.Dispose();
+                            });
+                            break;  
 
                         case 0x02:
                             int x = Server.ReadInt32();
                             int y = Server.ReadInt32();
+                            Console.WriteLine($"Mouse {x},{y} at {DateTime.Now:HH:mm:ss.fff}");
                             Cursor.Position = new Point(x, y);
                             break;
 

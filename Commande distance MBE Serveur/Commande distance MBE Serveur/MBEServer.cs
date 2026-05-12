@@ -40,6 +40,7 @@ namespace Commande_distance_MBE_Serveur
         public void WaitForClient()
         {
             client = listener.AcceptTcpClient();
+            client.NoDelay = true;
             stream = client.GetStream();
         }
 
