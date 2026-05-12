@@ -57,6 +57,20 @@ namespace Commande_distance_MBE_Serveur
                             Cursor.Position = new Point(x, y);
                             break;
 
+                        case 0x10: MakeInputs.LeftDown(); break;
+                        case 0x20: MakeInputs.LeftUp(); break;
+                        case 0x11: MakeInputs.RightDown(); break;
+                        case 0x21: MakeInputs.RightUp(); break;
+                        case 0x30: 
+                            int KeyDown = Server.ReadInt32();
+                            MakeInputs.KeyDown(KeyDown);
+                            break;
+                        case 0x40:
+                            int KeyUp = Server.ReadInt32();
+                            MakeInputs.KeyUp(KeyUp);
+                            break;
+
+
                     }
                 }
 
