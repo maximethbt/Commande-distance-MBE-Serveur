@@ -13,12 +13,11 @@ namespace Commande_distance_MBE_Serveur
     {
         static void Main(string[] args)
         {
-
-
             MBEServer Server = new MBEServer(9000);
             string Message;
             Bitmap image;
-            int i = 0;
+            int offsetX=0;
+            int offsetY=0;
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 
             if (!Server.Start())
@@ -32,46 +31,58 @@ namespace Commande_distance_MBE_Serveur
 
             while (true)
             {
+
                 Console.WriteLine("Waiting for connection");
                 Server.WaitForClient();
                 Console.WriteLine("Connected Client");
+                Server.SetReadTimeout(5000);
                 while (true)
                 {
-                    int requete = Server.ReadRequest();
-                    if (requete == -1) break;
 
-                    switch (requete)    
+                    try
                     {
-                        case 0x01:  // Screenshot
-                            ThreadPool.QueueUserWorkItem(_ => {
-                                var img = CaptureMBE.Capture(1);
-                                Server.SendImage(img);
-                                img.Dispose();
-                            });
-                            break;  
+                        int requete = Server.ReadRequest();
+                        if (requete == -1) break;
 
-                        case 0x02:
-                            int x = Server.ReadInt32();
-                            int y = Server.ReadInt32();
-                            Console.WriteLine($"Mouse {x},{y} at {DateTime.Now:HH:mm:ss.fff}");
-                            Cursor.Position = new Point(x, y);
-                            break;
+                        switch (requete)
+                        {
+                            case 0x01:  // Screenshot
+                                int screen = Server.ReadInt32();
+                                offsetX = Screen.AllScreens[screen - 1].Bounds.X;
+                                offsetY = Screen.AllScreens[screen - 1].Bounds.Y;
+                                ThreadPool.QueueUserWorkItem(_ => {
+                                    var img = CaptureMBE.Capture(screen);
+                                    Server.SendImage(img);
+                                    img.Dispose();
+                                });
+                                break;
 
-                        case 0x10: MakeInputs.LeftDown(); break;
-                        case 0x20: MakeInputs.LeftUp(); break;
-                        case 0x11: MakeInputs.RightDown(); break;
-                        case 0x21: MakeInputs.RightUp(); break;
-                        case 0x30: 
-                            int KeyDown = Server.ReadInt32();
-                            MakeInputs.KeyDown(KeyDown);
-                            break;
-                        case 0x40:
-                            int KeyUp = Server.ReadInt32();
-                            MakeInputs.KeyUp(KeyUp);
-                            break;
+                            case 0x02:
+                                int x = Server.ReadInt32();
+                                int y = Server.ReadInt32();
+                                Console.WriteLine($"Mouse {x},{y} at {DateTime.Now:HH:mm:ss.fff}");
+                                Cursor.Position = new Point(x + offsetX, y + offsetY);
+                                break;
 
-
+                            case 0x10: MakeInputs.LeftDown(); break;
+                            case 0x20: MakeInputs.LeftUp(); break;
+                            case 0x11: MakeInputs.RightDown(); break;
+                            case 0x21: MakeInputs.RightUp(); break;
+                            case 0x30:
+                                int KeyDown = Server.ReadInt32();
+                                MakeInputs.KeyDown(KeyDown);
+                                break;
+                            case 0x40:
+                                int KeyUp = Server.ReadInt32();
+                                MakeInputs.KeyUp(KeyUp);
+                                break;
+                        }
                     }
+                    catch (Exception)
+                    {
+                        break;
+                    }
+                    
                 }
 
                 Server.DisconnectClient();

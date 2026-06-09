@@ -9,6 +9,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using Encoder = System.Drawing.Imaging.Encoder;
 using System.Diagnostics;
+using System.Threading;
 
 namespace Commande_distance_MBE_Serveur
 {
@@ -18,7 +19,7 @@ namespace Commande_distance_MBE_Serveur
         private TcpListener listener;
         private TcpClient client;
         private NetworkStream stream;
-        
+        private volatile bool clientActive = false;
         public MBEServer(int Port)
         {
             listener = new TcpListener(IPAddress.Any, Port);      
@@ -42,14 +43,39 @@ namespace Commande_distance_MBE_Serveur
             client = listener.AcceptTcpClient();
             client.NoDelay = true;
             stream = client.GetStream();
+            clientActive = true;
+            StartRejector();
         }
 
         public void DisconnectClient()
         {
             if (stream != null) { stream.Close(); stream = null; }
             if (client != null) { client.Close(); client = null; }
+            clientActive = false;
         }
 
+
+        private void StartRejector()
+        {
+             Thread rejectorThread = new Thread(() =>
+            {
+                while (clientActive)
+                {
+                    try
+                    {
+                        TcpClient intruder = listener.AcceptTcpClient();
+                        Console.WriteLine("Refused extra client");
+                        intruder.Close();
+                    }
+                    catch
+                    {
+                        break;
+                    }
+                }
+            });
+            rejectorThread.IsBackground = true;
+            rejectorThread.Start();
+        }
         public int ReadRequest()
         {
             try
@@ -60,6 +86,12 @@ namespace Commande_distance_MBE_Serveur
             {
                 return -1;
             }
+        }
+
+        public void SetReadTimeout(int milliseconds)
+        {
+            if (stream != null)
+                stream.ReadTimeout = milliseconds;
         }
 
         public string ReadMessage()
@@ -122,13 +154,6 @@ namespace Commande_distance_MBE_Serveur
         public int ReadInt32()
         {
             return BitConverter.ToInt32(ReadExact(4), 0);
-        }
-
-        public void Stop()
-        {
-            if (stream != null) stream.Close();
-            if (client != null) client.Close();
-            if (listener != null) listener.Stop();
         }
     }
 }
