@@ -15,14 +15,14 @@ namespace Commande_distance_MBE_Serveur
 {
     internal class MBEServer
     {
-
         private TcpListener listener;
         private TcpClient client;
         private NetworkStream stream;
         private volatile bool clientActive = false;
+
         public MBEServer(int Port)
         {
-            listener = new TcpListener(IPAddress.Any, Port);      
+            listener = new TcpListener(IPAddress.Any, Port);
         }
 
         public bool Start()
@@ -54,10 +54,9 @@ namespace Commande_distance_MBE_Serveur
             clientActive = false;
         }
 
-
         private void StartRejector()
         {
-             Thread rejectorThread = new Thread(() =>
+            Thread rejectorThread = new Thread(() =>
             {
                 while (clientActive)
                 {
@@ -76,6 +75,7 @@ namespace Commande_distance_MBE_Serveur
             rejectorThread.IsBackground = true;
             rejectorThread.Start();
         }
+
         public int ReadRequest()
         {
             try
@@ -135,7 +135,29 @@ namespace Commande_distance_MBE_Serveur
         {
             byte[] jpegBytes = TurboJpegEncoder.Encode(image, 50);
             return SendImage(jpegBytes);
-            
+        }
+
+        // === Transfert de fichier serveur -> client ===
+        public bool SendFile(string path)
+        {
+            try
+            {
+                byte[] nameBytes = Encoding.UTF8.GetBytes(Path.GetFileName(path));
+                byte[] fileBytes = File.ReadAllBytes(path);
+
+                stream.WriteByte(1);                                        // 1 = un fichier suit
+                stream.Write(BitConverter.GetBytes(nameBytes.Length), 0, 4);
+                stream.Write(nameBytes, 0, nameBytes.Length);
+                stream.Write(BitConverter.GetBytes(fileBytes.Length), 0, 4);
+                stream.Write(fileBytes, 0, fileBytes.Length);
+                return true;
+            }
+            catch { return false; }
+        }
+
+        public void SendNoFile()
+        {
+            try { stream.WriteByte(0); } catch { }                          // 0 = rien
         }
 
         private byte[] ReadExact(int n)

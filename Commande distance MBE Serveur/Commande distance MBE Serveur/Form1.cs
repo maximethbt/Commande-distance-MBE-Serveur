@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -14,6 +15,10 @@ namespace Commande_distance_MBE_Serveur
     {
         Thread ServerThread;
         volatile bool running = true;
+
+        readonly object fileLock = new object();
+        string pendingFilePath = null;
+
         public Form1()
         {
             InitializeComponent();
@@ -43,17 +48,14 @@ namespace Commande_distance_MBE_Serveur
             }
             Log("Server successfully started");
 
-
             while (true)
             {
-
                 Log("Waiting for connection");
                 Server.WaitForClient();
                 Log("Connected Client");
                 Server.SetReadTimeout(5000);
                 while (running)
                 {
-
                     try
                     {
                         int requete = Server.ReadRequest();
@@ -79,6 +81,18 @@ namespace Commande_distance_MBE_Serveur
                                 Cursor.Position = new Point(x + offsetX, y + offsetY);
                                 break;
 
+                            case 0x03:  // Le client demande s'il y a un fichier
+                                string fichier;
+                                lock (fileLock) { fichier = pendingFilePath; pendingFilePath = null; }
+                                if (fichier != null && File.Exists(fichier))
+                                {
+                                    Server.SendFile(fichier);
+                                    Log("Fichier envoyé : " + Path.GetFileName(fichier));
+                                }
+                                else
+                                    Server.SendNoFile();
+                                break;
+
                             case 0x10: MakeInputs.LeftDown(); break;
                             case 0x20: MakeInputs.LeftUp(); break;
                             case 0x11: MakeInputs.RightDown(); break;
@@ -97,7 +111,6 @@ namespace Commande_distance_MBE_Serveur
                     {
                         break;
                     }
-
                 }
 
                 Server.DisconnectClient();
@@ -114,6 +127,21 @@ namespace Commande_distance_MBE_Serveur
         private void textBox_Logs_TextChanged(object sender, EventArgs e)
         {
 
+        }
+
+        // === Bouton "Envoyer un fichier" (à câbler dans le designer) ===
+        private void button_EnvoyerFichier_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog dlg = new OpenFileDialog())
+            {
+                dlg.Title = "Choisir un fichier à envoyer";
+                dlg.Filter = "Tous les fichiers (*.*)|*.*";
+                if (dlg.ShowDialog() == DialogResult.OK)
+                {
+                    lock (fileLock) { pendingFilePath = dlg.FileName; }
+                    Log("Fichier en attente : " + Path.GetFileName(dlg.FileName));
+                }
+            }
         }
 
         void Log(string message)
